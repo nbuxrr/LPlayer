@@ -8,20 +8,23 @@ Item {
     property alias btn_next: btn_next
     property alias btn_play: btn_play
     property alias btn_pre: btn_pre
-
+    property alias btn_list: btn_list
+    property alias lst_files: lst_files
+    
     RowLayout {
-        id: rowLayout1
+        id: hl_client
         anchors.fill: parent
 
+        // 播放列表
         ListView {
-            id: listView1
+            id: lst_files
             x: 0
             y: 0
-            width: 110
-            height: 160
+            width: 120
             visible: true
             Layout.fillWidth: true
             Layout.fillHeight: true
+           
             delegate: Item {
                 x: 5
                 width: 80
@@ -71,21 +74,20 @@ Item {
             Layout.fillHeight: true
             spacing: 0
 
+            // 播放画面
             Rectangle {
                 id: player
-                width: 200
-                height: 200
                 color: "#000000"
                 border.width: 0
                 Layout.fillHeight: true
                 Layout.fillWidth: true
             }
-
+            
+            // 进度控制
             RowLayout {
                 id: hl_progress
-                width: 100
-                height: 100
-
+                Layout.fillWidth: true
+                Layout.fillHeight: true
                 Slider {
                     id: sld_playprogress
                     Layout.fillWidth: true
@@ -93,49 +95,80 @@ Item {
 
                 Label {
                     id: lbl_playtime
-                    text: qsTr("时间")
-                }
-
-                Button {
-                    id: btn_speed
-                    text: qsTr("速度")
+                    //Layout.fillWidth: true
+                    text: qsTr("00:59:59")
                 }
             }
 
+            // 播放控制
             RowLayout {
                 id: hl_playctrls
                 height: 50
                 Layout.fillWidth: true
 
                 Button {
+                    id: btn_list
+                    Layout.fillWidth: true
+                    text: qsTr("列表")
+                    Layout.maximumWidth: 60
+                }
+
+                Button {
                     id: btn_pre
+                    Layout.fillWidth: true
                     text: "<-"
+                    Layout.maximumWidth: 60
                 }
 
                 Button {
                     id: btn_play
-                    text: qsTr("Play")
+                    Layout.fillWidth: true
+                    text: qsTr("播放")
+                    Layout.maximumWidth: 60                    
                 }
 
                 Button {
                     id: btn_next
+                    Layout.fillWidth: true
                     text: qsTr("->")
+                    Layout.maximumWidth: 60                    
                 }
 
+                Rectangle {
+                    id: space
+                    height: 0
+                    border.width: 0                    
+                    Layout.fillWidth: true
+                }
+                
                 Button {
                     id: btn_novoice
-                    text: qsTr("音量")
+                    Layout.fillWidth: true
+                    text: qsTr("静音")
+                    Layout.maximumWidth: 60                    
                 }
 
                 Slider {
                     id: sld_voice
-                    width: 50
+                    Layout.fillWidth: true
+                    Layout.maximumWidth: 100                    
+                }
+
+                Button {
+                    id: btn_speed
+                    Layout.fillWidth: true
+                    text: qsTr("速度")
+                    Layout.maximumWidth: 60                    
                 }
 
                 Button {
                     id: btn_fullscreen
+                    Layout.fillWidth: true
                     text: qsTr("全屏")
+                    Layout.maximumWidth: 60                    
                 }
+
+
 
 
             }

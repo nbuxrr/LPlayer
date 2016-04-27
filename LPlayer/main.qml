@@ -22,14 +22,6 @@ ApplicationWindow {
             }
         }
     }
-    */
-
-    MainForm {
-        anchors.fill: parent
-        //btn_play.onClicked: messageDialog.show(qsTr("开始播放"))
-        //btn_next.onClicked: messageDialog.show(qsTr("下一个"))
-        //btn_pre.onClicked: messageDialog.show(qsTr("前一个"))
-    }
 
     MessageDialog {
         id: messageDialog
@@ -40,4 +32,36 @@ ApplicationWindow {
             messageDialog.open();
         }
     }
+    */
+        
+    MainForm {
+        anchors.fill: parent
+        btn_play.onClicked: play(qsTr("FileName"))
+        //btn_next.onClicked: messageDialog.show(qsTr("下一个"))
+        //btn_pre.onClicked: messageDialog.show(qsTr("前一个"))
+        btn_list.onClicked: lst_files.visible = !lst_files.visible
+    
+        function onBtnPlay(){}
+        function onBtnPre(){}
+        function onBtnNext(){}
+        function onBtnNoVoice(){}
+        function onSldVoice(){}
+        function onBtnSpeed(){}
+        function onBtnFullScreen(){}
+
+        function play(FileName) 
+        {
+            if (btn_play.text == qsTr("播放"))
+            {
+                btn_play.text = qsTr("暂停");                
+            }
+            else
+            {
+                btn_play.text = qsTr("播放");      
+            }
+        }
+    
+    }
+
+
 }
