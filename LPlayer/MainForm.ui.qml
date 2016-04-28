@@ -1,16 +1,28 @@
 import QtQuick 2.4
 import QtQuick.Controls 1.3
 import QtQuick.Layouts 1.1
+import QtMultimedia 5.4
 
 Item {
     width: 640
     height: 480
-    property alias btn_next: btn_next
-    property alias btn_play: btn_play
-    property alias btn_pre: btn_pre
-    property alias btn_list: btn_list
+
     property alias lst_files: lst_files
-    
+    property alias mediaPlayer: mediaPlayer
+    property alias sld_playprogress: sld_playprogress
+    property alias lbl_playtime: lbl_playtime
+
+    property alias btn_list: btn_list
+    property alias btn_pre: btn_pre
+    property alias btn_play: btn_play
+    property alias btn_next: btn_next
+    property alias btn_novoice: btn_novoice
+    property alias sld_voice: sld_voice
+    property alias btn_speed: btn_speed
+
+
+
+
     RowLayout {
         id: hl_client
         anchors.fill: parent
@@ -21,10 +33,10 @@ Item {
             x: 0
             y: 0
             width: 120
-            visible: true
+            visible: false
             Layout.fillWidth: true
             Layout.fillHeight: true
-           
+
             delegate: Item {
                 x: 5
                 width: 80
@@ -65,6 +77,73 @@ Item {
                     name: "Green"
                     colorCode: "green"
                 }
+                ListElement {
+                    name: "Grey"
+                    colorCode: "grey"
+                }
+
+                ListElement {
+                    name: "Red"
+                    colorCode: "red"
+                }
+
+                ListElement {
+                    name: "Blue"
+                    colorCode: "blue"
+                }
+
+                ListElement {
+                    name: "Green"
+                    colorCode: "green"
+                }
+                ListElement {
+                    name: "Grey"
+                    colorCode: "grey"
+                }
+
+                ListElement {
+                    name: "Red"
+                    colorCode: "red"
+                }
+
+                ListElement {
+                    name: "Blue"
+                    colorCode: "blue"
+                }
+
+                ListElement {
+                    name: "Green"
+                    colorCode: "green"
+                }
+
+                 ListElement {
+                    name: "Blue"
+                    colorCode: "blue"
+                }
+
+                ListElement {
+                    name: "Green"
+                    colorCode: "green"
+                }
+                ListElement {
+                    name: "Grey"
+                    colorCode: "grey"
+                }
+
+                ListElement {
+                    name: "Red"
+                    colorCode: "red"
+                }
+
+                ListElement {
+                    name: "Blue"
+                    colorCode: "blue"
+                }
+
+                ListElement {
+                    name: "Green"
+                    colorCode: "green"
+                }
             }
         }
 
@@ -81,8 +160,19 @@ Item {
                 border.width: 0
                 Layout.fillHeight: true
                 Layout.fillWidth: true
+
+                MediaPlayer {
+                    id: mediaPlayer
+                    autoPlay: false
+                }
+
+                VideoOutput {
+                    id: video
+                    anchors.fill: parent
+                    source: mediaPlayer
+                }
             }
-            
+
             // 进度控制
             RowLayout {
                 id: hl_progress
@@ -109,7 +199,7 @@ Item {
                 Button {
                     id: btn_list
                     Layout.fillWidth: true
-                    text: qsTr("列表")
+                    text: qsTr(">")
                     Layout.maximumWidth: 60
                 }
 
@@ -124,57 +214,44 @@ Item {
                     id: btn_play
                     Layout.fillWidth: true
                     text: qsTr("播放")
-                    Layout.maximumWidth: 60                    
+                    Layout.maximumWidth: 60
                 }
 
                 Button {
                     id: btn_next
                     Layout.fillWidth: true
                     text: qsTr("->")
-                    Layout.maximumWidth: 60                    
+                    Layout.maximumWidth: 60
                 }
 
                 Rectangle {
                     id: space
                     height: 0
-                    border.width: 0                    
+                    border.width: 0
                     Layout.fillWidth: true
                 }
-                
+
                 Button {
                     id: btn_novoice
                     Layout.fillWidth: true
                     text: qsTr("静音")
-                    Layout.maximumWidth: 60                    
+                    Layout.maximumWidth: 60
                 }
 
                 Slider {
                     id: sld_voice
                     Layout.fillWidth: true
-                    Layout.maximumWidth: 100                    
+                    Layout.maximumWidth: 100
                 }
 
                 Button {
                     id: btn_speed
                     Layout.fillWidth: true
                     text: qsTr("速度")
-                    Layout.maximumWidth: 60                    
+                    Layout.maximumWidth: 60
                 }
-
-                Button {
-                    id: btn_fullscreen
-                    Layout.fillWidth: true
-                    text: qsTr("全屏")
-                    Layout.maximumWidth: 60                    
-                }
-
-
-
 
             }
-
-
-
 
         }
     }
