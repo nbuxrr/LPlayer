@@ -22,3 +22,10 @@ build-LPlayer-Desktop_Qt_5_6_0_clang_64bit-Release/LPlayer.app/Contents/PkgInfo
 build-LPlayer-Desktop_Qt_5_6_0_clang_64bit-Release/Makefile
 
 build-LPlayer-Desktop_Qt_5_6_0_clang_64bit-Release/qrc_qml.cpp
+*.suo
+LPlayer/LPlayer.pro.user
+*.old
+LPlayer/LPlayer.vcxproj.user
+*.log
+LPlayer/Win32/Debug/LPlayer.tlog/custombuild.command.1.tlog
+*.tlog
