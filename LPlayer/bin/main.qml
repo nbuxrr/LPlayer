@@ -40,9 +40,10 @@ ApplicationWindow {
     MainForm {
         id: main_form
         anchors.fill: parent
+        property variant previousPosition;
 
         // 按钮响应函数
-		    btn_file.onClicked: onBtnOpenFile();
+        btn_file.onClicked: onBtnOpenFile();
         btn_list.onClicked: onBtnShowList();
         btn_pre.onClicked: onBtnPre();
         btn_play.onClicked: onBtnPlay();
@@ -52,13 +53,43 @@ ApplicationWindow {
         vlcplayer.onSigPlayingProgressRefresh: onPlayingRefresh(iProgress, iLength, qstrCurTime, qstrLastTime);
         sld_playprogress.onPressedChanged: vlcplayer.setPlayPos(sld_playprogress.value);
 
+        ma_player.onPressed:
+        {
+            console.log("onPressed");
+            previousPosition = Qt.point(ma_player.mouseX, ma_player.mouseY);
+        }
+
+        ma_player.onPositionChanged:
+        {
+            console.log("OnPositionChanged", app_wnd.x, app_wnd.y, previousPosition.x, previousPosition.y);
+
+            if (ma_player.pressedButtons == Qt.LeftButton && app_wnd.visibility != 5)
+            {
+                app_wnd.x = app_wnd.x + ma_player.mouseX - previousPosition.x;
+                app_wnd.y = app_wnd.y + ma_player.mouseY - previousPosition.y;
+            }
+        }
+
+        ma_player.onDoubleClicked:
+        {
+            console.log("onDoubleClicked");
+            if (app_wnd.visibility != 5)
+            {
+                app_wnd.showFullScreen();
+            }
+            else
+            {
+                app_wnd.showNormal();
+            }
+        }
+
         function onBtnShowList()
         {
             lst_files.visible = !lst_files.visible;
             btn_list.text = lst_files.visible? qsTr("<") : qsTr(">");
         }
         
-		    function onBtnOpenFile() {file_dlg.open();}
+        function onBtnOpenFile() {file_dlg.open();}
 
         function onBtnPre(){}
       
@@ -97,7 +128,7 @@ ApplicationWindow {
 
         function play(FilePath)
         {
-            console.log("播放文件：", FilePath);
+            console.log("播放文件：", FilePath); 
             vlcplayer.playFile(FilePath);
             btn_play.checked = false;
         }
@@ -112,11 +143,11 @@ ApplicationWindow {
 
         onAccepted: {
             strFilePath = file_dlg.fileUrls[0].toString();
-            console.log("选择了1: ", file_dlg.fileUrls[0].toString())
+            console.log("选择了1: ", file_dlg.fileUrls[0].toString());
             main_form.play(strFilePath);
         }
         onRejected: {
-            console.log("取消了选择")
+            console.log("取消了选择");
         }
     }
 }

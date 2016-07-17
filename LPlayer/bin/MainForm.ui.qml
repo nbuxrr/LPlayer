@@ -22,7 +22,7 @@ Item {
     property alias btn_speed: btn_speed
     property alias ma_player: ma_player
     property alias btn_file: btn_file
-	  property alias lbl_lasttime: lbl_lasttime
+    property alias lbl_lasttime: lbl_lasttime
 
     RowLayout {
         id: hl_client
@@ -109,6 +109,7 @@ Item {
                         id: ma_player;
                         anchors.fill: parent;
                         hoverEnabled: true;
+
                         onEntered: rt_playctrls.visible = btn_list.visible = true;
                         onExited:  rt_playctrls.visible = btn_list.visible = false;
 
