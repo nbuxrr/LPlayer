@@ -44,3 +44,15 @@ LPlayer/bin/LPlayer_d.exe
 *.pdb
 LPlayer/bin/plugins/plugins.dat
 LPlayer/GeneratedFiles/Debug/moc_QMLVLCItem.cpp
+LPlayer/.vs/config/applicationhost.config
+LPlayer/bin/LPlayer.exe
+LPlayer/bin/plugins/plugins.dat
+LPlayer/bin/plugins/plugins.dat.12416
+LPlayer/bin/plugins/plugins.dat.12620
+LPlayer/bin/plugins/plugins.dat
+LPlayer/bin/plugins/plugins.dat.13584
+LPlayer/bin/plugins/plugins.dat
+LPlayer/bin/plugins/plugins.dat.15216
+LPlayer/bin/plugins/plugins.dat.8088
+LPlayer/bin/plugins/plugins.dat.2788
+LPlayer/GeneratedFiles/Release/moc_QMLVLCItem.cpp

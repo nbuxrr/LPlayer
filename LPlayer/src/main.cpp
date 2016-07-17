@@ -1,75 +1,42 @@
+//*************************************************************************
+//	filename: main.cpp    create-time: 2016-7-17 15:30:25
+//	author: xurr
+//	note: LPlayer播放器，基于QML + C++ + VLC实现的一个播放器Demo		
+//*************************************************************************
 #include "AppLPlayer.h"
-#include <Qtqml/QQmlApplicationEngine>
-#include <QDebug>
-#include <QFile>
-#include <QTime> 
 #include <QtQml>
+#include <QMessageBox>
 #include "QMLVLCItem.h"
-#include "CommFunc.h"
-
-void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
-
 
 CAppLPlayer *g_app = NULL;
 
 int main(int argc, char *argv[])
 {
     CAppLPlayer app(argc, argv);
-	g_app = &app;
-
 	qInstallMessageHandler(customMessageHandler);
-	CommFunc::SetExecDir(QCoreApplication::applicationDirPath().toStdString());
-    QTRACE("当前文件路径: %s\n", QCoreApplication::applicationDirPath().toStdString().c_str());
+	qmlRegisterType<CQMLVLCItem>("vlc.qml.Controls", 1, 0, "QMLVLCItem");
+	qRegisterMetaType<string>("string");
 
-    qmlRegisterType<CQMLVLCItem>("vlc.qml.Controls", 1, 0, "QMLVLCItem");
+	g_app = &app;
+	
+	if (!g_app->InitApp())
+	{
+		QMessageBox::warning(NULL, "LPalyer", "App init failed!", QMessageBox::Close, QMessageBox::Close);
+		return 0;
+	}
 
-    QString qstrQmlFile(CommFunc::GetExecDir());
+	QString qstrQmlFile;
+	g_app->GetMainQmlPath(qstrQmlFile);
 
-#ifdef WIN32
-    qstrQmlFile += "/main.qml";
-    qstrQmlFile.replace("/", "\\");
-#else
-    qstrQmlFile = "main.qml";
-#endif
-
-    QQmlApplicationEngine engine;
-	engine.load(qstrQmlFile);
-
-	QList<QObject*> qlstObjs = engine.rootObjects();
+	QQmlApplicationEngine qmlEngine;
+	qmlEngine.load(qstrQmlFile);
+	QList<QObject*> qlstObjs = qmlEngine.rootObjects();
 	
 	if (qlstObjs.size() <= 0)
 	{
+		QMessageBox::warning(NULL, "LPalyer", "Load UI failed!", QMessageBox::Close, QMessageBox::Close);
 		return 0;
 	}
-	
+		
 	return app.exec();
-}
-
-
-void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
-{
-	string strLevel;
-
-	switch (type)
-	{
-	case QtDebugMsg:
-		strLevel = "Debug:";
-		break;
-	case QtWarningMsg:
-		strLevel = "Warning:";
-		break;
-	case QtCriticalMsg:
-		strLevel = "Critical:";
-		break;
-	case QtFatalMsg:
-		strLevel = "Fatal:";
-		abort();
-		break;
-	}
-
-	QTRACE("%s %s %s	%s - %d - %s\n"
-		, QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss").toLocal8Bit().constData()
-		, strLevel.c_str()
-		, msg.toLocal8Bit().constData()
-		, QString(context.file).toLocal8Bit().constData(), context.line, context.function);
 }

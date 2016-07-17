@@ -6,8 +6,8 @@ using namespace std;
 
 namespace CommFunc
 {
-	void SetExecDir(const string &strDir);
-	const char* GetExecDir();
+	void SetAppFileDir(const string &strDir);
+	const string& GetAppFileDir();
 
 	void test_trace(const char *psFormat, ...);				// 实现类似afx中TRACE的功能	2014-12-21 9:32:47 xurr
 };

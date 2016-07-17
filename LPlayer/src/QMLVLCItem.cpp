@@ -5,7 +5,6 @@
 //*************************************************************************
 #include "QMLVLCItem.h"
 #include "AppLPlayer.h"
-#include "CommFunc.h"
 #include "vlc/libvlc.h"
 #include "vlc/libvlc_media.h"
 #include "vlc/libvlc_media_player.h"
@@ -13,17 +12,20 @@
 
 #define FRAME_WIDTH 1080
 #define FRAME_HEIGHT 720
+#define FRAME_BUF_SIZE (FRAME_WIDTH * FRAME_HEIGHT * 4)
 
 CQMLVLCItem::CQMLVLCItem(QQuickItem *parent/* = NULL*/)
 : QQuickPaintedItem(parent)
-, m_pMediaPlayCtrl(NULL)
-, m_pFrameBuf(NULL)
-, m_pFrameDraw(NULL)
+, m_pVLCMediaPlayer(NULL)
+, m_pFrameDecodeBuf(NULL)
+, m_pFrameDrawBuf(NULL)
+, m_iFrameWidth(-1)
+, m_iFrameHeight(-1)
 {
-	m_pFrameBuf = new uchar[FRAME_WIDTH * FRAME_HEIGHT * 4];
-	memset(m_pFrameBuf, 0, FRAME_WIDTH * FRAME_HEIGHT * 4);
-	m_pFrameDraw = new uchar[FRAME_WIDTH * FRAME_HEIGHT * 4];
-	memset(m_pFrameDraw, 0, FRAME_WIDTH * FRAME_HEIGHT * 4);
+	m_pFrameDecodeBuf = new uchar[FRAME_BUF_SIZE];
+	memset(m_pFrameDecodeBuf, 0, FRAME_BUF_SIZE);
+	m_pFrameDrawBuf = new uchar[FRAME_BUF_SIZE];
+	memset(m_pFrameDrawBuf, 0, FRAME_BUF_SIZE);
 	
 	connect(&m_timer, SIGNAL(timeout()), this, SLOT(SlotTimeOut()));
 }
@@ -31,17 +33,55 @@ CQMLVLCItem::CQMLVLCItem(QQuickItem *parent/* = NULL*/)
 
 CQMLVLCItem::~CQMLVLCItem()
 {
-	if (m_pMediaPlayCtrl != NULL)
+	if (m_pVLCMediaPlayer != NULL)
 	{
-		libvlc_media_player_stop(m_pMediaPlayCtrl);
-		libvlc_media_player_release(m_pMediaPlayCtrl);	// 释放播放器 Free the media_player
+		libvlc_media_player_stop(m_pVLCMediaPlayer);
+		libvlc_media_player_release(m_pVLCMediaPlayer);	// 释放播放器 Free the media_player
 	}
 
-	if (m_pFrameBuf != NULL)
+	if (m_pFrameDecodeBuf != NULL)
 	{
-		delete []m_pFrameBuf;
-		m_pFrameBuf = NULL;
+		delete []m_pFrameDecodeBuf;
+		m_pFrameDecodeBuf = NULL;
 	}
+}
+
+void CQMLVLCItem::paint(QPainter *painter)
+{
+	if (m_iFrameWidth != -1	&& m_iFrameHeight != -1)
+	{
+		m_FrameMutex.lock();
+		memcpy(m_pFrameDrawBuf, m_pFrameDecodeBuf, FRAME_BUF_SIZE);
+		m_FrameMutex.unlock();
+
+		QRect rct(0, 0, width(), height());
+		QTRACE("windows w = %d, h = %d\n", rct.width(), rct.height());
+		
+		double fwr = (double)rct.width() / (double)m_iFrameWidth;
+		double fhr = (double)rct.height() / (double)m_iFrameHeight;
+
+		if (fwr - fhr > 0.00000001)
+		{
+			int iNewW = fhr * m_iFrameWidth;
+			rct.setX((rct.width() - iNewW) / 2);
+			rct.setWidth(iNewW);
+		}
+		else
+		{
+			int iNewH = fwr * m_iFrameHeight;
+			rct.setY((rct.height() - iNewH) / 2);
+			rct.setHeight(iNewH);
+		}
+
+		painter->drawImage(rct, QImage(m_pFrameDrawBuf, FRAME_WIDTH, FRAME_HEIGHT, QImage::Format_RGBA8888));
+	}
+}
+
+void CQMLVLCItem::playFile(const QString &qstrFile)
+{
+	QTRACE("%s\n", __FUNCTION__);
+	SetCurPath(qstrFile);
+	play();
 }
 
 void CQMLVLCItem::SetCurPath(const QString &qstrPath)
@@ -53,34 +93,7 @@ void CQMLVLCItem::SetCurPath(const QString &qstrPath)
 	qstrtmp.replace("file:\\\\\\", "file:///");
 #endif
 
-	m_strCurPath = qstrtmp.toStdString();
-}
-
-
-void CQMLVLCItem::paint(QPainter *painter)
-{
-	m_FrameMutex.lock();
-	memcpy(m_pFrameDraw, m_pFrameBuf, FRAME_WIDTH * FRAME_HEIGHT * 4);
-	m_FrameMutex.unlock();
-
-	QRect rct(0, 0, width(), height());
-	float fwr = (float)rct.width() / (float)FRAME_WIDTH;
-	float fhr = (float)rct.height() / (float)FRAME_HEIGHT;
-	
-	if (fwr - fhr > 0.000001)
-	{
-		int iNewW = fhr * FRAME_WIDTH;
-		rct.setX((rct.width() - iNewW) / 2);
-		rct.setWidth(iNewW);
-	}
-	else
-	{
-		int iNewH = fwr * FRAME_HEIGHT;
-		rct.setY((rct.height() - iNewH) / 2);
-		rct.setHeight(iNewH);
-	}
-
-	painter->drawImage(rct, QImage(m_pFrameDraw, FRAME_WIDTH, FRAME_HEIGHT, QImage::Format_RGBA8888));
+	m_strMediaPath = qstrtmp.toStdString();
 }
 
 void CQMLVLCItem::play()
@@ -92,42 +105,44 @@ void CQMLVLCItem::play()
 		m_timer.stop();
 	}
 
-	if (m_strCurPath.empty())
+	if (m_strMediaPath.empty())
 	{
 		QTRACE("current file path is empty\n");
 		return;
 	}
 
-	if (m_pMediaPlayCtrl != NULL)
+	if (m_pVLCMediaPlayer != NULL)
 	{
-		libvlc_media_player_stop(m_pMediaPlayCtrl);
-		libvlc_media_player_release(m_pMediaPlayCtrl);	// 释放播放器 Free the media_player
+		libvlc_media_player_stop(m_pVLCMediaPlayer);
+		libvlc_media_player_release(m_pVLCMediaPlayer);	// 释放播放器 Free the media_player
 	}
 
+	//libvlc_media_t *tmpMedia = libvlc_media_new_location (g_app->m_pVlcInstance, "file:///F:\\movie\\cuc_ieschool.flv");  
+	//libvlc_media_t *tmpMedia = libvlc_media_new_location (g_app->m_pVlcInstance, "screen://");  //Screen Capture  
+	//libvlc_media_t *tmpMedia = libvlc_media_new_path(g_app->m_pVlcInstance, m_strMediaPath.c_str());
+	libvlc_media_t *tmpMedia  = libvlc_media_new_location(g_app->m_pVlcInstance, m_strMediaPath.c_str());
 
-	//libvlc_media_t *tmpMedia = libvlc_media_new_location (inst, "file:///F:\\movie\\cuc_ieschool.flv");  
-	//libvlc_media_t *tmpMedia = libvlc_media_new_location (inst, "screen://");  //Screen Capture  
-	//libvlc_media_t *tmpMedia = libvlc_media_new_path(g_app->m_pVlcInstance, m_strCurPath.c_str());
-	libvlc_media_t *tmpMedia  = libvlc_media_new_location(g_app->m_pVlcInstance, m_strCurPath.c_str());
-
-	
 	if (tmpMedia != NULL)
 	{
-		m_pMediaPlayCtrl = libvlc_media_player_new_from_media(tmpMedia);
-		libvlc_media_release(tmpMedia);/* No need to keep the media now */
+		m_pVLCMediaPlayer = libvlc_media_player_new_from_media(tmpMedia);
+		libvlc_media_release(tmpMedia);		/* No need to keep the media now */
 		
-		if (m_pMediaPlayCtrl != NULL) {
-			libvlc_video_set_callbacks(m_pMediaPlayCtrl
-										, CQMLVLCItem::CallBackLock
-										, CQMLVLCItem::CallBackUnLock
-										, CQMLVLCItem::CallBackDisplay
-										, this);
+		if (m_pVLCMediaPlayer != NULL)
+		{
+			memset(m_pFrameDecodeBuf, 0, FRAME_BUF_SIZE);
+			memset(m_pFrameDrawBuf, 0, FRAME_BUF_SIZE);
+			update();
 
-			libvlc_video_set_format(m_pMediaPlayCtrl, "RGBA", FRAME_WIDTH, FRAME_HEIGHT, FRAME_WIDTH * 4);
+			libvlc_video_set_callbacks(m_pVLCMediaPlayer, CQMLVLCItem::CallBackLock, CQMLVLCItem::CallBackUnLock, CQMLVLCItem::CallBackDisplay, this);
+			libvlc_video_set_format(m_pVLCMediaPlayer, "RGBA", FRAME_WIDTH, FRAME_HEIGHT, FRAME_WIDTH * 4);
 
+			m_iFrameWidth = -1;
+			m_iFrameHeight = -1;
 			m_timer.start(45);
-			libvlc_media_player_play(m_pMediaPlayCtrl);
-		} else {
+			libvlc_media_player_play(m_pVLCMediaPlayer);
+		} 
+		else
+		{
 			QTRACE("err: %s - %d\n", __FUNCTION__, __LINE__);
 		}
 	}
@@ -135,25 +150,37 @@ void CQMLVLCItem::play()
 	{
 		QTRACE("err: %s - %d\n", __FUNCTION__, __LINE__);
 	}
-
-// 	int length = libvlc_media_player_get_length(m_pMediaPlayCtrl);
-// 	int width = libvlc_video_get_width(m_pMediaPlayCtrl);
-// 	int height = libvlc_video_get_height(m_pMediaPlayCtrl);
 }
 
-void CQMLVLCItem::playFile(const QString &qstrFile)
-{
-	QTRACE("%s\n", __FUNCTION__);
-	SetCurPath(qstrFile);
-	play();
-}
 
 void CQMLVLCItem::setPause(bool bPause)
 {
-	if (m_pMediaPlayCtrl != NULL)
+	if (m_pVLCMediaPlayer != NULL)
 	{
 		QTRACE("bPause: %d\n", bPause);
-		libvlc_media_player_set_pause(m_pMediaPlayCtrl, bPause);
+		libvlc_media_player_set_pause(m_pVLCMediaPlayer, bPause);
+	}
+}
+
+void CQMLVLCItem::setPlayPos(int iPos)
+{
+	if (m_pVLCMediaPlayer != NULL)
+	{
+		QTRACE("%s %d / %d\n", __FUNCTION__, iPos, libvlc_media_player_get_length(m_pVLCMediaPlayer));
+
+		m_FrameMutex.lock();
+		libvlc_media_player_set_time(m_pVLCMediaPlayer, iPos);
+		m_FrameMutex.unlock();
+	}
+}
+
+void CQMLVLCItem::setVolume(int iNum)
+{
+	QTRACE("%s %d\n", __FUNCTION__, iNum);
+
+	if (m_pVLCMediaPlayer != NULL)
+	{
+		libvlc_audio_set_volume(m_pVLCMediaPlayer, max(iNum, 0));
 	}
 }
 
@@ -161,40 +188,21 @@ void CQMLVLCItem::stop()
 {
 	QTRACE("%s\n", __FUNCTION__);
 
-	if (m_pMediaPlayCtrl != NULL)
+	if (m_pVLCMediaPlayer != NULL)
 	{
-		libvlc_media_player_stop(m_pMediaPlayCtrl);
-	}
-}
-
-void CQMLVLCItem::setVolume(int iNum)
-{
-	QTRACE("%s %d\n", __FUNCTION__, iNum);
-	
-	if (m_pMediaPlayCtrl != NULL)
-	{
-		libvlc_audio_set_volume(m_pMediaPlayCtrl, max(iNum, 0));
-	}
-}
-
-void CQMLVLCItem::setPlayPos(int iPos)
-{
-
-	if (m_pMediaPlayCtrl != NULL)
-	{
-		QTRACE("%s %d / %d\n", __FUNCTION__, iPos, libvlc_media_player_get_length(m_pMediaPlayCtrl));
-
-		m_FrameMutex.lock();
-		libvlc_media_player_set_time(m_pMediaPlayCtrl, iPos);
-		m_FrameMutex.unlock();
+		libvlc_media_player_stop(m_pVLCMediaPlayer);
 	}
 }
 
 void* CQMLVLCItem::Lock(vdss &planes)
 {
+	m_iFrameWidth = libvlc_video_get_width(m_pVLCMediaPlayer);
+	m_iFrameHeight = libvlc_video_get_height(m_pVLCMediaPlayer);
+	QTRACE("TRACE: %d, %d\n", m_iFrameWidth, m_iFrameHeight);
+
 	m_FrameMutex.lock();
-	memset(m_pFrameBuf, 0, FRAME_WIDTH * FRAME_HEIGHT * 4);
-	*planes = m_pFrameBuf;
+	//memset(m_pFrameDecodeBuf, 0, FRAME_BUF_SIZE);
+	*planes = m_pFrameDecodeBuf;
 
 	return NULL;
 }
@@ -206,12 +214,13 @@ void CQMLVLCItem::UnLock(void * /*picture*/, void *const * /*planes*/)
 
 void CQMLVLCItem::Display(void * /*picture*/)
 {
-
+	//QEvent *pEvt = new QEvent(QEvent::Paint);
+	//QCoreApplication::postEvent(this, pEvt);
 }
 
 void* CQMLVLCItem::CallBackLock(void *opaque, void **planes)
 {
-	CQMLVLCItem* p = static_cast<CQMLVLCItem *>(opaque);
+	CQMLVLCItem *p = static_cast<CQMLVLCItem *>(opaque);
 	
 	if (p != NULL)
 	{
@@ -223,7 +232,7 @@ void* CQMLVLCItem::CallBackLock(void *opaque, void **planes)
 
 void CQMLVLCItem::CallBackUnLock(void *opaque, void *picture, void *const *planes)
 {
-	CQMLVLCItem* p = static_cast<CQMLVLCItem *>(opaque);
+	CQMLVLCItem *p = static_cast<CQMLVLCItem *>(opaque);
 
 	if (p != NULL)
 	{
@@ -233,7 +242,7 @@ void CQMLVLCItem::CallBackUnLock(void *opaque, void *picture, void *const *plane
 
 void CQMLVLCItem::CallBackDisplay(void *opaque, void *picture)
 {
-	CQMLVLCItem* p = static_cast<CQMLVLCItem *>(opaque);
+	CQMLVLCItem *p = static_cast<CQMLVLCItem *>(opaque);
 
 	if (p != NULL)
 	{
@@ -249,13 +258,13 @@ void CQMLVLCItem::SlotTimeOut()
 	
 	if ((i = (++i) % 10) == 0)
 	{
-		if (m_pMediaPlayCtrl != NULL)
+		if (m_pVLCMediaPlayer != NULL)
 		{
-			int iLength = libvlc_media_player_get_length(m_pMediaPlayCtrl);
+			int iLength = libvlc_media_player_get_length(m_pVLCMediaPlayer);
 
 			if (iLength > 0)
 			{
-				int icurtime = libvlc_media_player_get_time(m_pMediaPlayCtrl);
+				int icurtime = libvlc_media_player_get_time(m_pVLCMediaPlayer);
 				
 				int iCurSeconds = icurtime / 1000;
 				int iLastSeconds = (iLength - icurtime) / 1000;
@@ -270,3 +279,9 @@ void CQMLVLCItem::SlotTimeOut()
 		}
 	}
 }
+
+
+
+
+
+
