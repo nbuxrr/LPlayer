@@ -225,7 +225,7 @@ Item {
                                 height: pressed? 30:(hovered? 35:30);
 
 								anchors.left: sld_voice.right;
-                                anchors.leftMargin: 40
+                                anchors.leftMargin: 20
                                 anchors.verticalCenter: btn_play.verticalCenter;
 								iconSource: "rsc/btn_file.png"
                                 tooltip: "打开";
@@ -277,7 +277,7 @@ Item {
 
                             Slider {
                                 id: sld_voice;
-                                width: 80;
+                                width: 50;
                                 height: 3;
                                 anchors.left: btn_novoice.right;
                                 anchors.leftMargin: 5;

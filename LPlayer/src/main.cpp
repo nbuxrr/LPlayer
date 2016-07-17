@@ -19,12 +19,20 @@ int main(int argc, char *argv[])
 
 	qInstallMessageHandler(customMessageHandler);
 	CommFunc::SetExecDir(QCoreApplication::applicationDirPath().toStdString());
-	
-	qmlRegisterType<CQMLVLCItem>("vlc.qml.Controls", 1, 0, "QMLVLCItem");
-	QString qstrQmlFile(CommFunc::GetExecDir());
-	qstrQmlFile += "/main.qml";
-	qstrQmlFile.replace("/", "\\");
-	QQmlApplicationEngine engine;
+    QTRACE("当前文件路径: %s\n", QCoreApplication::applicationDirPath().toStdString().c_str());
+
+    qmlRegisterType<CQMLVLCItem>("vlc.qml.Controls", 1, 0, "QMLVLCItem");
+
+    QString qstrQmlFile(CommFunc::GetExecDir());
+
+#ifdef WIN32
+    qstrQmlFile += "/main.qml";
+    qstrQmlFile.replace("/", "\\");
+#else
+    qstrQmlFile = "main.qml";
+#endif
+
+    QQmlApplicationEngine engine;
 	engine.load(qstrQmlFile);
 
 	QList<QObject*> qlstObjs = engine.rootObjects();

@@ -47,8 +47,11 @@ CQMLVLCItem::~CQMLVLCItem()
 void CQMLVLCItem::SetCurPath(const QString &qstrPath)
 {
 	QString qstrtmp = qstrPath;
+
+#ifdef WIN32
 	qstrtmp.replace("/", "\\");
 	qstrtmp.replace("file:\\\\\\", "file:///");
+#endif
 
 	m_strCurPath = qstrtmp.toStdString();
 }
@@ -56,12 +59,28 @@ void CQMLVLCItem::SetCurPath(const QString &qstrPath)
 
 void CQMLVLCItem::paint(QPainter *painter)
 {
-	//QTRACE("%s\n", __FUNCTION__);
 	m_FrameMutex.lock();
 	memcpy(m_pFrameDraw, m_pFrameBuf, FRAME_WIDTH * FRAME_HEIGHT * 4);
 	m_FrameMutex.unlock();
 
-	painter->drawImage(QRect(0, 0, width(), height()), QImage(m_pFrameDraw, FRAME_WIDTH, FRAME_HEIGHT, QImage::Format_RGBA8888));
+	QRect rct(0, 0, width(), height());
+	float fwr = (float)rct.width() / (float)FRAME_WIDTH;
+	float fhr = (float)rct.height() / (float)FRAME_HEIGHT;
+	
+	if (fwr - fhr > 0.000001)
+	{
+		int iNewW = fhr * FRAME_WIDTH;
+		rct.setX((rct.width() - iNewW) / 2);
+		rct.setWidth(iNewW);
+	}
+	else
+	{
+		int iNewH = fwr * FRAME_HEIGHT;
+		rct.setY((rct.height() - iNewH) / 2);
+		rct.setHeight(iNewH);
+	}
+
+	painter->drawImage(rct, QImage(m_pFrameDraw, FRAME_WIDTH, FRAME_HEIGHT, QImage::Format_RGBA8888));
 }
 
 void CQMLVLCItem::play()
@@ -180,12 +199,12 @@ void* CQMLVLCItem::Lock(vdss &planes)
 	return NULL;
 }
 
-void CQMLVLCItem::UnLock(void *picture, void *const *planes)
+void CQMLVLCItem::UnLock(void * /*picture*/, void *const * /*planes*/)
 {
 	m_FrameMutex.unlock();
 }
 
-void CQMLVLCItem::Display(void *picture)
+void CQMLVLCItem::Display(void * /*picture*/)
 {
 
 }

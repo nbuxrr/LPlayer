@@ -5,11 +5,11 @@ import QtQuick.Dialogs 1.2
 ApplicationWindow {
     id: app_wnd
     visible: true
-    width: 640
-    height: 480
+    width: 416
+    height: 234
     title: qsTr("好好学习 天天向上")
-    minimumWidth: 600
-    minimumHeight: 450
+    minimumWidth: 416
+    minimumHeight: 234
 
     /*
     menuBar: MenuBar {
